@@ -1,3 +1,4 @@
+from functools import wraps
 import os
 import sys
 import re
@@ -123,6 +124,50 @@ def xlfunc(f=None, **kwargs):
         f.__xlfunc__['call_in_wizard'] = should_call_in_wizard(**kwargs)
         f.__xlfunc__['volatile'] = check_volatile(**kwargs)
         return f
+    if f is None:
+        return inner
+    else:
+        return inner(f)
+
+
+def xl_named_func(f=None, **kwargs):
+    def inner(f):
+
+        # wrap f to return object as a key-value pair of id and value
+        @wraps(f)
+        def wrapper(object_id, *ags, **kws):
+            result = f(*ags, **kws)
+            return conversion.KeyValuePair(object_id, result)
+
+        # adds xlfunc attributes to wrapper
+        f = xlfunc(f, **kwargs)
+        wrapper.__xlfunc__ = f.__xlfunc__
+
+        # check that no argument is already named as the object id and increment the positions of all arguments
+        args = wrapper.__xlfunc__["args"]
+
+        for i, arg in enumerate(args):
+            if arg["name"] == conversion.OBJECT_ID:
+                raise Exception("xlwings does not support UDFs returning objects with argument name '{}'"
+                                "".format(conversion.OBJECT_ID))
+            else:
+                args[i]["pos"] = arg["pos"] + 1
+
+        # add information for the object_id
+        arg_info = {
+            "name": conversion.OBJECT_ID,
+            "pos": 0,
+            "vba": None,
+            "doc": "ID of the object to return to Excel",
+            "vararg": False,
+            "options": {}
+        }
+        args.insert(0, arg_info)
+        wrapper.__xlfunc__[conversion.OBJECT_ID] = arg_info
+
+        # return wrapper function
+        return wrapper
+
     if f is None:
         return inner
     else:

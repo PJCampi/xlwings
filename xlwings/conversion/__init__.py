@@ -14,6 +14,9 @@ from .standard import (DictConverter, Accessor, RangeAccessor, RawValueAccessor,
                        AdjustDimensionsStage, CleanDataForWriteStage, CleanDataFromReadStage, Ensure2DStage,
                        ExpandRangeStage, ReadValueFromRangeStage, TransposeStage, WriteValueToRangeStage,
                        Options, Pipeline)
+
+from .objects import KeyValuePair, OBJECT_ID
+
 if np:
     from .numpy_conv import NumpyArrayConverter
 if pd:
